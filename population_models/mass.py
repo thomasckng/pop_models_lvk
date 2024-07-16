@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 
-@njit
+# @njit
 def smoothing(m, mmin, delta):
     p            = np.zeros(m.shape, dtype = np.float64)
     idx          = (m > mmin) & (m < mmin + delta)
@@ -11,7 +11,7 @@ def smoothing(m, mmin, delta):
     p[m >= mmin + delta] = 1.
     return p
 
-@njit
+# @njit
 def smoothing_float(m, mmin, delta):
     if m > mmin + delta:
         p = 1.
@@ -24,42 +24,42 @@ def smoothing_float(m, mmin, delta):
     return p
 
 # Primary mass
-@njit
+# @njit
 def powerlaw_truncated(m, alpha, mmin, mmax):
     p = m**-alpha * (alpha-1.)/(mmin**(1.-alpha)-mmax**(1.-alpha))
     p[m < mmin] = 0.
     p[m > mmax] = 0.
     return p
 
-@njit
+# @njit
 def _powerlaw_smoothed_unnorm(m, alpha, mmax, mmin, delta):
     return powerlaw_truncated(m, alpha, mmin, mmax)*smoothing(m, mmin, delta)
     
-@njit
+# @njit
 def powerlaw_smoothed(m, alpha, mmax, mmin, delta):
     x  = np.linspace(mmin, mmax, 1000)
     dx = x[1]-x[0]
     n  = np.sum(_powerlaw_smoothed_unnorm(x, alpha, mmax, mmin, delta)*dx)
-    return _powerlaw_smoothed_unnorm(m.flatten(), alpha, mmax, mmin, delta)/n
+    return _powerlaw_smoothed_unnorm(m, alpha, mmax, mmin, delta)/n
 
-@njit
+# @njit
 def peak(m, mu, sigma):
     return np.exp(-0.5*(m-mu)**2/sigma**2)/(np.sqrt(2*np.pi)*sigma)
 
-@njit
+# @njit
 def _peak_smoothed_unnorm(m, mu, sigma, mmin, delta):
     return peak(m, mu, sigma)*smoothing(m, mmin, delta)
 
-@njit
+# @njit
 def peak_smoothed(m, mu, sigma, mmin, delta, mmax = 100.):
     x  = np.linspace(mmin, mmax, 1000)
     dx = x[1]-x[0]
     n  = np.sum(_peak_smoothed_unnorm(x, mu, sigma, mmin, delta)*dx)
-    return _peak_smoothed_unnorm(m.flatten(), mu, sigma, mmin, delta)/n
+    return _peak_smoothed_unnorm(m, mu, sigma, mmin, delta)/n
 
-@njit
-def plpeak(m, alpha, mmin, mmax, delta, mu, sigma, weight):
-    return (1.-weight)*powerlaw_smoothed(m, alpha, mmax, mmin, delta) + weight*peak_smoothed(m, mu, sigma, mmin, delta)
+# @njit
+def plpeak(m, alpha=3.5, mmin=5, mmax=90, delta=5, mu=35, sigma=5, w=0.2):
+    return (1.-w)*powerlaw_smoothed(m, alpha, mmax, mmin, delta) + w*peak_smoothed(m, mu, sigma, mmin, delta)
 
 # mass ratio
 q_norm = np.linspace(0,1,1001)[1:]
