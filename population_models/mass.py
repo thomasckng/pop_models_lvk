@@ -36,7 +36,7 @@ def _powerlaw_smoothed_unnorm(m, alpha, mmax, mmin, delta):
     return powerlaw_truncated(m, alpha, mmin, mmax)*smoothing(m, mmin, delta)
     
 # @njit
-def powerlaw_smoothed(m, alpha, mmax, mmin, delta):
+def powerlaw_smoothed(m, alpha, mmax, mmin, delta, **kwargs):
     x  = np.linspace(mmin, mmax, 1000)
     dx = x[1]-x[0]
     n  = np.sum(_powerlaw_smoothed_unnorm(x, alpha, mmax, mmin, delta)*dx)
