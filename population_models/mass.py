@@ -36,11 +36,36 @@ def _powerlaw_smoothed_unnorm(m, alpha, mmax, mmin, delta):
     return powerlaw_truncated(m, alpha, mmin, mmax)*smoothing(m, mmin, delta)
     
 # @njit
-def powerlaw_smoothed(m, alpha=3.5, mmax=90, mmin=5, delta=5, **kwargs):
+def powerlaw_smoothed(m, alpha=3.5, mmax=90, mmin=5, delta=5):
     x  = np.linspace(mmin, mmax, 1000)
     dx = x[1]-x[0]
     n  = np.sum(_powerlaw_smoothed_unnorm(x, alpha, mmax, mmin, delta)*dx)
     return _powerlaw_smoothed_unnorm(m, alpha, mmax, mmin, delta)/n
+
+def broken_powerlaw_smoothed(m, alpha1=3.5, alpha2=2.5, mmax=90, mmin=5, delta=5, b=0.5):
+    x  = np.linspace(mmin, mmax, 1000)
+    dx = x[1]-x[0]
+
+    mbreak = mmin + b*(mmax - mmin)
+
+    # First part
+    p1 = _powerlaw_smoothed_unnorm(x[x < mbreak], alpha1, mmax, mmin, delta)
+    # Second part
+    p2 = _powerlaw_smoothed_unnorm(x[x >= mbreak], alpha2, mmax, mmin, delta)
+
+    # Combine
+    p = np.zeros_like(x)
+    p[x < mbreak] = p1
+    p[x >= mbreak] = p2
+
+    n = np.sum(p*dx)
+
+    result = np.zeros_like(m, dtype=np.float64)
+    mask1 = m < mbreak
+    mask2 = ~mask1
+    result[mask1] = _powerlaw_smoothed_unnorm(m[mask1], alpha1, mmax, mmin, delta) / n
+    result[mask2] = _powerlaw_smoothed_unnorm(m[mask2], alpha2, mmax, mmin, delta) / n
+    return result
 
 # @njit
 def peak(m, mu, sigma):
